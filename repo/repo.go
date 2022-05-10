@@ -17,6 +17,11 @@ var (
 	ErrApiNotRunning = errors.New("api not running")
 )
 
+type UserConfigOverrides map[string]interface{}
+
+// FIXME: Anything returning config.Config here would now be returning
+//  the system config: internal system defaults with the UserConfigOverrides
+//  applied over them.
 // Repo represents all persistent data of a given ipfs node.
 type Repo interface {
 	// Config returns the ipfs configuration file from the repo. Changes made
@@ -27,13 +32,19 @@ type Repo interface {
 	// the given prefix for naming.
 	BackupConfig(prefix string) (string, error)
 
+	// FIXME: Deprecate this and start using `SetConfigKey` instead to clearly
+	//  expose which configuration options is being changed.
 	// SetConfig persists the given configuration struct to storage.
 	SetConfig(*config.Config) error
 
-	// SetConfigKey sets the given key-value pair within the config and persists it to storage.
+	// SetConfigKey sets the given key-value pair within the system config and
+	// also persists it to the user configuration overrides file.
 	SetConfigKey(key string, value interface{}) error
 
 	// GetConfigKey reads the value for the given key from the configuration in storage.
+	// FIXME: Deprecate this and rece it with two distinct APIs:
+	// * GetSysteConfigKey: reads from the running system configuration.
+	// * GetUserConfigOverrideKey: reads from the user override file (e.g., ``.ipfs/conf`).
 	GetConfigKey(key string) (interface{}, error)
 
 	// Datastore returns a reference to the configured data storage backend.

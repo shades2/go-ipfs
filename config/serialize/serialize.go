@@ -60,6 +60,7 @@ func encode(w io.Writer, value interface{}) error {
 	return err
 }
 
+// FIXME: Remove this. We will never load the user overrides into the system config struct.
 // Load reads given file and returns the read config, or error.
 func Load(filename string) (*config.Config, error) {
 	var cfg config.Config

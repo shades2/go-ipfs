@@ -21,6 +21,11 @@ func Init(out io.Writer, nBitsForKeypair int) (*Config, error) {
 	return InitWithIdentity(identity)
 }
 
+// All the configuration default values defined here will remain exactly the same.
+// The difference is that these values are no longer serialized to the user
+// file but instead used as the system defaults. (In fact the "optional"
+// variables that were used to remove defaults from this place can now be
+// removed to restore the defaults here, making them more visible.)
 func InitWithIdentity(identity Identity) (*Config, error) {
 	bootstrapPeers, err := DefaultBootstrapPeers()
 	if err != nil {

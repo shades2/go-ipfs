@@ -2,6 +2,7 @@ package fsrepo
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -96,16 +97,23 @@ type FSRepo struct {
 	closed bool
 	// path is the file-system path
 	path string
-	// Path to the configuration file that may or may not be inside the FSRepo
+	// Path to the user configuration override file that may or may not be inside the FSRepo
 	// path (see config.Filename for more details).
+	// FIXME: Rename to userConfigOverrideFilePath.
 	configFilePath string
 	// lockfile is the file system lock to prevent others from opening
 	// the same fsrepo path concurrently
 	lockfile io.Closer
-	config   *config.Config
-	ds       repo.Datastore
-	keystore keystore.Keystore
-	filemgr  *filestore.FileManager
+	// System configuration that will be used by the running node.
+	// It is the merge of the internal defaultConfig and the external JSON file
+	// with the user overrides.
+	config *config.Config
+	// *Read-only* internal configuration defaults.
+	// FIXME: Replace with an API call to enforce the *read-only* attribute.
+	defaultConfig *config.Config
+	ds            repo.Datastore
+	keystore      keystore.Keystore
+	filemgr       *filestore.FileManager
 }
 
 var _ repo.Repo = (*FSRepo)(nil)
@@ -388,13 +396,54 @@ func (r *FSRepo) SetAPIAddr(addr ma.Multiaddr) error {
 	return err
 }
 
+func (r *FSRepo) readUserConfigOverrides(filename string) (*repo.UserConfigOverrides, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		//if os.IsNotExist(err) {
+		//	err = ErrNotInitialized
+		//}
+		return nil, err
+	}
+	defer f.Close()
+
+	overrides := new(repo.UserConfigOverrides)
+	if err := json.NewDecoder(f).Decode(overrides); err != nil {
+		return nil, fmt.Errorf("failure to decode user config: %s", err)
+	}
+	return overrides, nil
+}
+
 // openConfig returns an error if the config file is not present.
 func (r *FSRepo) openConfig() error {
-	conf, err := serialize.Load(r.configFilePath)
+	overrides, err := r.readUserConfigOverrides(r.configFilePath)
 	if err != nil {
 		return err
 	}
-	r.config = conf
+
+	// FIXME: Encapsulate the default system config production and
+	//  get the identity from the user overrides (or maybe save it
+	//  in the repo itself).
+	defaultConfig, err := config.InitWithIdentity(config.Identity{})
+	if err != nil {
+		return err
+	}
+	r.defaultConfig = defaultConfig
+
+	// FIXME: Override default config with the subset of user config options.
+	//  (Below is just for illustration purposes. We need a dedicated function
+	//  that checks that the user config override attributes are valid keys in
+	//  the Config struct.)
+	defaultConfigMap, err := config.ToMap(r.defaultConfig)
+	if err != nil {
+		return err
+	}
+	mergedConfigMap := common.MapMergeDeep(defaultConfigMap, *overrides)
+	mergedConfig, err := config.FromMap(mergedConfigMap)
+	if err != nil {
+		return err
+	}
+	r.config = mergedConfig
+
 	return nil
 }
 
@@ -537,6 +586,8 @@ func (r *FSRepo) BackupConfig(prefix string) (string, error) {
 
 // SetConfig updates the FSRepo's config. The user must not modify the config
 // object after calling this method.
+// FIXME: This whole note here is exactly about this issue and would be fixed
+//  by the decoupling.
 // FIXME: There is an inherent contradiction with storing non-user-generated
 //  Go config.Config structures as user-generated JSON nested maps. This is
 //  evidenced by the issue of `omitempty` property of fields that aren't defined
