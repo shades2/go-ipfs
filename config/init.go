@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/ipfs/interface-go-ipfs-core/options"
@@ -21,6 +22,37 @@ func Init(out io.Writer, nBitsForKeypair int) (*Config, error) {
 	return InitWithIdentity(identity)
 }
 
+// FIXME: Join with InitWithIdentity.
+func DefaultConfig(profiles string) (*Config, error) {
+	defaultConfig, err := InitWithIdentity(Identity{})
+	if err != nil {
+		return nil, err
+	}
+	if err := applyProfiles(defaultConfig, profiles); err != nil {
+		return nil, err
+	}
+	return defaultConfig, nil
+}
+
+func applyProfiles(conf *Config, profiles string) error {
+	if profiles == "" {
+		return nil
+	}
+
+	for _, profile := range strings.Split(profiles, ",") {
+		transformer, ok := Profiles[profile]
+		if !ok {
+			return fmt.Errorf("invalid configuration profile: %s", profile)
+		}
+
+		if err := transformer.Transform(conf); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// FIXME: Rename to DefaultConfig. No identity.
 func InitWithIdentity(identity Identity) (*Config, error) {
 	bootstrapPeers, err := DefaultBootstrapPeers()
 	if err != nil {

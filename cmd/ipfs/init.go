@@ -5,11 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-
 	assets "github.com/ipfs/go-ipfs/assets"
 	oldcmds "github.com/ipfs/go-ipfs/commands"
 	core "github.com/ipfs/go-ipfs/core"
@@ -17,6 +12,9 @@ import (
 	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 	path "github.com/ipfs/go-path"
 	unixfs "github.com/ipfs/go-unixfs"
+	"io"
+	"os"
+	"path/filepath"
 
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	files "github.com/ipfs/go-ipfs-files"
@@ -77,7 +75,7 @@ environment variable:
 		algorithm, _ := req.Options[algorithmOptionName].(string)
 		nBitsForKeypair, nBitsGiven := req.Options[bitsOptionName].(int)
 
-		var conf *config.Config
+		var conf config.UserConfigOverrides
 
 		f := req.Files
 		if f != nil {
@@ -93,10 +91,15 @@ environment variable:
 				return fmt.Errorf("expected a regular file")
 			}
 
-			conf = &config.Config{}
+			c := &config.Config{}
 			if err := json.NewDecoder(file).Decode(conf); err != nil {
 				return err
 			}
+			configMap, err := config.ToMap(c)
+			if err != nil {
+				return err
+			}
+			conf = configMap
 		}
 
 		if conf == nil {
@@ -115,7 +118,7 @@ environment variable:
 			if err != nil {
 				return err
 			}
-			conf, err = config.InitWithIdentity(identity)
+			conf, err = config.NewUserConfigOverrides(identity)
 			if err != nil {
 				return err
 			}
@@ -126,25 +129,7 @@ environment variable:
 	},
 }
 
-func applyProfiles(conf *config.Config, profiles string) error {
-	if profiles == "" {
-		return nil
-	}
-
-	for _, profile := range strings.Split(profiles, ",") {
-		transformer, ok := config.Profiles[profile]
-		if !ok {
-			return fmt.Errorf("invalid configuration profile: %s", profile)
-		}
-
-		if err := transformer.Transform(conf); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func doInit(out io.Writer, repoRoot string, empty bool, confProfiles string, conf *config.Config) error {
+func doInit(out io.Writer, repoRoot string, empty bool, confProfiles string, conf config.UserConfigOverrides) error {
 	if _, err := fmt.Fprintf(out, "initializing IPFS node at %s\n", repoRoot); err != nil {
 		return err
 	}
@@ -157,11 +142,7 @@ func doInit(out io.Writer, repoRoot string, empty bool, confProfiles string, con
 		return errRepoExists
 	}
 
-	if err := applyProfiles(conf, confProfiles); err != nil {
-		return err
-	}
-
-	if err := fsrepo.Init(repoRoot, conf); err != nil {
+	if err := fsrepo.Init(repoRoot, conf, confProfiles); err != nil {
 		return err
 	}
 
