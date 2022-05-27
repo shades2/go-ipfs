@@ -172,6 +172,18 @@ func DefaultDatastoreConfig() Datastore {
 	}
 }
 
+func DefaultDatastoreConfigMap() map[string]interface{} {
+	buf, err := JsonEncode(DefaultDatastoreConfig())
+	if err != nil {
+		panic("failed to encode DefaultDatastoreConfig")
+	}
+	m, err := jsonDecodeMap(buf)
+	if err != nil {
+		panic("failed to decode DefaultDatastoreConfig")
+	}
+	return m
+}
+
 func badgerSpec() map[string]interface{} {
 	return map[string]interface{}{
 		"type":   "measure",

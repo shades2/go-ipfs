@@ -247,10 +247,6 @@ func GetConfig(configFilePath string) (*Config, error) {
 		return nil, err
 	}
 
-	if config.Identity.PeerID == "" || config.Identity.PrivKey == "" {
-		return nil, fmt.Errorf("config.Identity not set in the user file")
-	}
-
 	return config, nil
 }
 
@@ -271,7 +267,7 @@ func DecodeUserConfigOverrides(r io.Reader) (UserConfigOverrides, error) {
 	var overrides UserConfigOverrides
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
-	if err := dec.Decode(overrides); err != nil {
+	if err := dec.Decode(&overrides); err != nil {
 		return nil, fmt.Errorf("failure to decode user config: %s", err)
 	}
 	return overrides, nil
