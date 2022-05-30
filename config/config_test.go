@@ -48,11 +48,11 @@ func TestOverrideConfig(t *testing.T) {
 		require.NoError(t, err)
 		return cloned
 	}
-	modToken := "CONFIG-VALUE-MODIFIED-BY-TestOverrideMap"
+	MOD_TOKEN := "CONFIG-VALUE-MODIFIED-BY-TestOverrideMap"
 	modKey := func(c *Config, k string) *Config {
 		m, err := ToMap(c)
 		require.NoError(t, err)
-		require.NoError(t, common.MapSetKV(m, k, modToken))
+		require.NoError(t, common.MapSetKV(m, k, MOD_TOKEN))
 		modConfig, err := FromMap(m)
 		require.NoError(t, err)
 		return modConfig
@@ -64,13 +64,13 @@ func TestOverrideConfig(t *testing.T) {
 		require.Equal(t, modKey(c, "Identity.PeerID"),
 			overrideConfig(c, map[string]interface{}{
 				"Identity": map[string]interface{}{
-					"PeerID": modToken,
+					"PeerID": MOD_TOKEN,
 				},
 			}))
 		require.Equal(t, modKey(c, "Datastore.StorageMax"),
 			overrideConfig(c, map[string]interface{}{
 				"Datastore": map[string]interface{}{
-					"StorageMax": modToken,
+					"StorageMax": MOD_TOKEN,
 				},
 			}))
 	}

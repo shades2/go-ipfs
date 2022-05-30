@@ -29,7 +29,10 @@ func emptyDatastore() config.UserConfigOverrides {
 	if err != nil {
 		panic("failed to encode empty identity")
 	}
-	common.MapSetKV(overrides, "Datastore", config.DefaultDatastoreConfigMap())
+	err = common.MapSetKV(overrides, "Datastore", config.DefaultDatastoreConfigMap())
+	if err != nil {
+		panic("failed to set Datastore")
+	}
 	return overrides
 }
 

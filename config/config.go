@@ -206,6 +206,11 @@ func OverrideMap(left, right map[string]interface{}) {
 	for key, rightVal := range right {
 		leftVal, found := left[key]
 		if !found {
+			// FIXME: For now nonexistent values in the left will be accepted
+			//  and created from right. This is because JSON-decoded default config, left,
+			//  still has a lot of `json:",omitempty"` that won't be present. In the future
+			//  this should be removed.
+			left[key] = rightVal
 			continue
 		}
 		leftMap, ok := leftVal.(map[string]interface{})
@@ -240,6 +245,9 @@ func GetConfig(configFilePath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	// This shoudln't be neccessary but just in case remove Identity, we'll never
+	//  use a default one here.
+	delete(configMap, "Identity")
 
 	OverrideMap(configMap, overrides)
 	config, err := FromMap(configMap)

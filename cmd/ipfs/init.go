@@ -91,11 +91,11 @@ environment variable:
 				return fmt.Errorf("expected a regular file")
 			}
 
-			c := &config.Config{}
-			if err := json.NewDecoder(file).Decode(conf); err != nil {
+			c := config.Config{}
+			if err := json.NewDecoder(file).Decode(&conf); err != nil {
 				return err
 			}
-			configMap, err := config.ToMap(c)
+			configMap, err := config.ToMap(&c)
 			if err != nil {
 				return err
 			}

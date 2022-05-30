@@ -191,11 +191,11 @@ func initTempNode(ctx context.Context, bootstrap []string, peers []peer.AddrInfo
 
 	// configure the temporary node
 	err = common.MapSetManyKV(cfg, []common.KeyValue{
-		{"cfg.Routing.Type", "dhtclient"},
+		{Key: "cfg.Routing.Type", Value: "dhtclient"},
 		// Disable listening for inbound connections
-		{"cfg.Addresses.Gateway", []string{}},
-		{"cfg.Addresses.API", []string{}},
-		{"cfg.Addresses.Swarm", []string{tempNodeTcpAddr}},
+		{Key: "cfg.Addresses.Gateway", Value: []string{}},
+		{Key: "cfg.Addresses.API", Value: []string{}},
+		{Key: "cfg.Addresses.Swarm", Value: []string{tempNodeTcpAddr}},
 	})
 	if err != nil {
 		return "", err
