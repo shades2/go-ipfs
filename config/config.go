@@ -218,6 +218,11 @@ func OverrideMap(left, right map[string]interface{}) {
 			left[key] = rightVal
 			continue
 		}
+		if rightVal == nil {
+			return // FIXME: Do we want to clear config values?
+			// If override is empty we should error when loading the user override
+			// config file.
+		}
 		OverrideMap(leftMap, rightVal.(map[string]interface{}))
 	}
 }
