@@ -107,8 +107,6 @@ type FSRepo struct {
 	// It is the merge of the internal defaultConfig and the external JSON file
 	// with the user overrides.
 	config *config.Config
-	// *Read-only* internal configuration defaults.
-	defaultConfig *config.Config
 	ds            repo.Datastore
 	keystore      keystore.Keystore
 	filemgr       *filestore.FileManager
