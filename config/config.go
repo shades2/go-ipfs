@@ -194,6 +194,10 @@ func NewUserConfigOverridesWithProfiles(identity Identity, profiles string) (Use
 	if err != nil {
 		return nil, err
 	}
+	err = CheckProfiles(profiles)
+	if err != nil {
+		return nil, err
+	}
 	overrides["Profiles"] = profiles
 	return overrides, nil
 }
@@ -279,6 +283,7 @@ func ReadUserConfigOverrides(filename string) (UserConfigOverrides, error) {
 func DecodeUserConfigOverrides(r io.Reader) (UserConfigOverrides, error) {
 	var overrides UserConfigOverrides
 	dec := json.NewDecoder(r)
+	// FIXME: Check that this matches the contents of the Config struct.
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&overrides); err != nil {
 		return nil, fmt.Errorf("failure to decode user config: %s", err)

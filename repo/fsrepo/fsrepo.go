@@ -279,7 +279,7 @@ func initSpec(path string, conf map[string]interface{}) error {
 
 // Init initializes a new FSRepo at the given path with the provided config.
 // TODO add support for custom datastores.
-func Init(repoPath string, conf config.UserConfigOverrides, profiles string) error {
+func Init(repoPath string, conf config.UserConfigOverrides) error {
 
 	// packageLock must be held to ensure that the repo is not initialized more
 	// than once.
@@ -294,6 +294,13 @@ func Init(repoPath string, conf config.UserConfigOverrides, profiles string) err
 		return err
 	}
 
+	var profiles string
+	profilesFromMap, err := common.MapGetKV(conf, "Profiles")
+	if err != nil {
+		if pStr, ok := profilesFromMap.(string); ok { // FIXME: Why do we need this second check?
+			profiles = pStr
+		}
+	}
 	c, err := config.DefaultConfig(profiles)
 	if err != nil {
 		return err

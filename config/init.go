@@ -34,18 +34,27 @@ func DefaultConfig(profiles string) (*Config, error) {
 	return defaultConfig, nil
 }
 
+func CheckProfiles(profiles string) error {
+	for _, profile := range strings.Split(profiles, ",") {
+		_, ok := Profiles[profile]
+		if !ok {
+			return fmt.Errorf("invalid configuration profile: %s", profile)
+		}
+	}
+	return nil
+}
+
 func applyProfiles(conf *Config, profiles string) error {
 	if profiles == "" {
 		return nil
 	}
 
-	for _, profile := range strings.Split(profiles, ",") {
-		transformer, ok := Profiles[profile]
-		if !ok {
-			return fmt.Errorf("invalid configuration profile: %s", profile)
-		}
+	if err := CheckProfiles(profiles); err != nil {
+		return err
+	}
 
-		if err := transformer.Transform(conf); err != nil {
+	for _, profile := range strings.Split(profiles, ",") {
+		if err := Profiles[profile].Transform(conf); err != nil {
 			return err
 		}
 	}

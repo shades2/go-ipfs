@@ -267,7 +267,7 @@ func daemonFunc(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment
 			}
 		}
 
-		if err = doInit(os.Stdout, cctx.ConfigRoot, false, profiles, conf); err != nil {
+		if err = doInit(os.Stdout, cctx.ConfigRoot, false, conf); err != nil {
 			return err
 		}
 	}

@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	assets "github.com/ipfs/go-ipfs/assets"
 	oldcmds "github.com/ipfs/go-ipfs/commands"
 	core "github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/commands"
+	"github.com/ipfs/go-ipfs/repo/common"
 	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 	path "github.com/ipfs/go-path"
 	unixfs "github.com/ipfs/go-unixfs"
@@ -91,15 +91,11 @@ environment variable:
 				return fmt.Errorf("expected a regular file")
 			}
 
-			c := config.Config{}
-			if err := json.NewDecoder(file).Decode(&conf); err != nil {
-				return err
-			}
-			configMap, err := config.ToMap(&c)
+			decoded, err := config.DecodeUserConfigOverrides(file)
 			if err != nil {
 				return err
 			}
-			conf = configMap
+			conf = decoded
 		}
 
 		if conf == nil {
@@ -124,12 +120,23 @@ environment variable:
 			}
 		}
 
-		profiles, _ := req.Options[profileOptionName].(string)
-		return doInit(os.Stdout, cctx.ConfigRoot, empty, profiles, conf)
+		if profiles, ok := req.Options[profileOptionName].(string); ok {
+			// Replace old config's profiles with the ones passed as arguments.
+			err := config.CheckProfiles(profiles)
+			if err != nil {
+				return err
+			}
+			err = common.MapSetKV(conf, "Profiles", profiles)
+			if err != nil {
+				return err
+			}
+		}
+
+		return doInit(os.Stdout, cctx.ConfigRoot, empty, conf)
 	},
 }
 
-func doInit(out io.Writer, repoRoot string, empty bool, confProfiles string, conf config.UserConfigOverrides) error {
+func doInit(out io.Writer, repoRoot string, empty bool, conf config.UserConfigOverrides) error {
 	if _, err := fmt.Fprintf(out, "initializing IPFS node at %s\n", repoRoot); err != nil {
 		return err
 	}
@@ -142,7 +149,7 @@ func doInit(out io.Writer, repoRoot string, empty bool, confProfiles string, con
 		return errRepoExists
 	}
 
-	if err := fsrepo.Init(repoRoot, conf, confProfiles); err != nil {
+	if err := fsrepo.Init(repoRoot, conf); err != nil {
 		return err
 	}
 

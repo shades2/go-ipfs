@@ -214,7 +214,7 @@ func initTempNode(ctx context.Context, bootstrap []string, peers []peer.AddrInfo
 	}
 
 	// Assumes that repo plugins are already loaded
-	err = fsrepo.Init(dir, cfg, "")
+	err = fsrepo.Init(dir, cfg)
 	if err != nil {
 		os.RemoveAll(dir)
 		return "", fmt.Errorf("failed to initialize ephemeral node: %s", err)
